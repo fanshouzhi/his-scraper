@@ -3,7 +3,7 @@ name: his-scraper
 description: 云HIS内网系统爬取工具。用于爬取医院信息管理系统内网页面，支持需要登录认证的JavaScript单页应用，触发弹窗获取表单内容。触发词：HIS、爬取医院、门诊、挂号、排班。
 ---
 
-# 云HIS内网系统爬取
+# 云HIS内网系统爬取工具
 
 自动化爬取云HIS（医院信息系统）内网管理页面。
 
@@ -77,15 +77,15 @@ with sync_playwright() as p:
 
 **注意**：Cookie 有效期较短，每次会话需要重新获取。
 
-## 支持模块
+## 已测试模块
 
-| 模块 | URL |
-|------|-----|
-| 班次维护 | /his/kyee/outp/shiftInfoManager/home.json |
-| 分时时段维护 | /his/kyee/outp/timeSlotConfig/home.json |
-| 诊室信息维护 | /his/kyee/outp/roomInfo/home.json |
-| 排班管理 | /his/schedule_gt.htm |
-| 门诊收费日报 | /his/kyee/gt/report/clc/mzInvoiceShow.htm |
+| 模块名称 | URL | 状态 |
+|----------|-----|------|
+| 班次维护 | /his/kyee/outp/shiftInfoManager/home.json | ✅ 已测试 |
+| 分时时段维护 | /his/kyee/outp/clcTimeInfoManager/home.json | ✅ 已测试 |
+| 诊室信息维护 | /his/kyee/outp/roomInfo/home.json | ⏳ 待测试 |
+| 排班管理 | /his/schedule_gt.htm | ⏳ 待测试 |
+| 门诊收费日报 | /his/kyee/gt/report/clc/mzInvoiceShow.htm | ⏳ 待测试 |
 
 ## 爬取方法论
 
@@ -123,20 +123,24 @@ with sync_playwright() as p:
 A: 每次会话需要重新获取新的 Cookie
 
 **Q: 点击按钮超时？**
-A: 检查是否有弹窗覆盖 (`.dhxwins_mcover`)，先关闭弹窗再操作
+A: 检查是否有弹窗覆盖 (`.dhxwins_mcover`)，先按 Escape 关闭弹窗再操作
 
 **Q: 找不到元素？**
-A: 使用 `page.locator("selector").first.click()` 替代直接 click
+A: 使用 `page.locator("selector").first.click()` 或 JavaScript: `page.evaluate("document.querySelector('selector').click()")`
+
+**Q: 部分模块没有清空按钮？**
+A: 分时时段维护模块没有清空按钮，这是正常的，直接清空搜索框即可
 
 ## 保存位置
 
 - **笔记目录**: `~/myWork/Notes/his/`
 - **命名规范**: `his_{模块名}_{类型}.md/html/png`
 
-## 脚本说明
+## 测试报告
 
-- [scripts/his_scrape.py](scripts/his_scrape.py) - 主页面抓取
-- [scripts/his_modal.py](scripts/his_modal.py) - 弹窗触发抓取
+详见 `~/myWork/Notes/his/` 目录下的测试报告：
+- `班次维护_测试报告.md`
+- `分时时段维护_测试报告.md`
 
 ---
 更新于: 2026-03-24
