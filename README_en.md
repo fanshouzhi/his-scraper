@@ -2,6 +2,19 @@
 
 Automated scraping tool for Cloud HIS (Hospital Information System) intranet pages.
 
+## Scraping Rules (Important)
+
+**Every scraping must use hybrid mode:**
+
+1. **Step 1: Firecrawl** - Get page basic structure
+   - Quick fetch of list data, table content
+   - Save as Markdown/HTML format
+2. **Step 2: Playwright** - Handle interactive operations
+   - Button clicks, modal content
+   - Screenshot key page states
+
+**DO NOT use Playwright directly for static content!**
+
 ## Features
 
 - Supports authenticated intranet page scraping
@@ -26,7 +39,7 @@ Automated scraping tool for Cloud HIS (Hospital Information System) intranet pag
 
 ## Quick Start
 
-### Method 1: Firecrawl (Static Pages)
+### Step 1: Firecrawl for Static Content
 
 ```bash
 curl -s -X POST http://localhost:3002/v1/scrape \
@@ -39,7 +52,7 @@ curl -s -X POST http://localhost:3002/v1/scrape \
   }'
 ```
 
-### Method 2: Playwright (Interactive Pages)
+### Step 2: Playwright for Interaction
 
 ```python
 from playwright.sync_api import sync_playwright
@@ -76,7 +89,7 @@ with sync_playwright() as p:
 1. Login to HIS system
 2. Open browser DevTools (F12)
 3. Application → Cookies → click domain
-4. Copy SESSION and JSESSIONID values
+4. Copy SESSION value
 
 **Note**: Cookie expires frequently, need to get new one each session.
 
@@ -86,20 +99,10 @@ with sync_playwright() as p:
 |-------------|-----|
 | 班次维护 (Shift Info) | /his/kyee/outp/shiftInfoManager/home.json |
 | 分时时段维护 (Time Slots) | /his/kyee/outp/clcTimeInfoManager/home.json |
+| 诊室信息维护 (Room Info) | /his/kyee/outp/clcRoomInfoManager/home.json |
+| 排班模板维护 (Schedule Template) | /his/schedule_mode_gt.htm |
 
-## Scraping Methodology
-
-### 1. Static Content (Firecrawl)
-- Use for: List pages, search results, page structure
-- Pros: Fast, no browser needed
-- Cons: Cannot handle login/auth or complex interactions
-
-### 2. Interactive (Playwright)
-- Use for: Button clicks, modal content, row selection, form submission
-- Pros: Simulates real user actions
-- Cons: Need to handle modal overlay issues
-
-### 3. Common Issues
+## Common Issues
 
 **Q: Cookie expired?**
 A: Get new Cookie for each session

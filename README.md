@@ -2,6 +2,19 @@
 
 自动化爬取云HIS（医院信息系统）内网管理页面。
 
+## 爬取规则（重要）
+
+**每次爬取必须使用混合模式：**
+
+1. **第一步：Firecrawl** - 获取页面基本结构
+   - 快速获取列表数据、表格内容
+   - 保存 Markdown/HTML 格式
+2. **第二步：Playwright** - 处理交互操作
+   - 按钮点击、弹窗内容
+   - 截图保存关键页面状态
+
+**禁止直接使用 Playwright 获取静态内容！**
+
 ## 功能特点
 
 - 支持需要登录认证的内网页面抓取
@@ -26,9 +39,7 @@
 
 ## 快速开始
 
-### 方式一：Firecrawl（静态页面）
-
-适合抓取不需要交互的页面内容。
+### 步骤一：Firecrawl 获取静态内容
 
 ```bash
 curl -s -X POST http://localhost:3002/v1/scrape \
@@ -41,7 +52,7 @@ curl -s -X POST http://localhost:3002/v1/scrape \
   }'
 ```
 
-### 方式二：Playwright（交互式页面）
+### 步骤二：Playwright 处理交互
 
 ```python
 from playwright.sync_api import sync_playwright
@@ -78,7 +89,7 @@ with sync_playwright() as p:
 1. 登录 HIS 系统
 2. 打开浏览器开发者工具 (F12)
 3. Application → Cookies → 点击域名
-4. 复制 SESSION 和 JSESSIONID 值
+4. 复制 SESSION 值
 
 **注意**：Cookie 有效期较短，每次会话需要重新获取。
 
@@ -88,20 +99,10 @@ with sync_playwright() as p:
 |----------|-----|
 | 班次维护 | /his/kyee/outp/shiftInfoManager/home.json |
 | 分时时段维护 | /his/kyee/outp/clcTimeInfoManager/home.json |
+| 诊室信息维护 | /his/kyee/outp/clcRoomInfoManager/home.json |
+| 排班模板维护 | /his/schedule_mode_gt.htm |
 
-## 爬取方法论
-
-### 1. 静态内容抓取 (Firecrawl)
-- 适用于：列表页面、搜索结果、页面基本结构
-- 优点：快速、无需维护浏览器
-- 缺点：无法处理登录验证和复杂交互
-
-### 2. 交互式抓取 (Playwright)
-- 适用于：按钮点击、弹窗内容、表格行选中、表单提交
-- 优点：可模拟真实用户操作
-- 缺点：需要处理弹窗覆盖问题
-
-### 3. 常见问题
+## 常见问题
 
 **Q: Cookie 过期了？**
 A: 每次会话需要重新获取新的 Cookie

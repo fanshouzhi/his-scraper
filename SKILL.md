@@ -7,6 +7,19 @@ description: 云HIS内网系统爬取工具。用于爬取医院信息管理系�
 
 自动化爬取云HIS（医院信息系统）内网管理页面。
 
+## 爬取规则（重要）
+
+**每次爬取必须使用混合模式：**
+
+1. **第一步：Firecrawl** - 获取页面基本结构
+   - 快速获取列表数据、表格内容
+   - 保存 Markdown/HTML 格式
+2. **第二步：Playwright** - 处理交互操作
+   - 按钮点击、弹窗内容
+   - 截图保存关键页面状态
+
+**禁止直接使用 Playwright 获取静态内容！**
+
 ## 前置要求
 
 1. **Firecrawl 服务**：`cd ~/firecrawl && docker compose up -d`
@@ -15,15 +28,9 @@ description: 云HIS内网系统爬取工具。用于爬取医院信息管理系�
 
 ## 快速开始
 
-### 方式一：Firecrawl（静态页面）
-
-适合抓取不需要交互的页面内容。
+### 步骤一：Firecrawl 获取静态内容
 
 ```bash
-# 设置 Cookie
-export HIS_COOKIE="SESSION=xxx; job_no=zsgly; JSESSIONID=xxx"
-
-# 抓取页面
 curl -s -X POST http://localhost:3002/v1/scrape \
   -H "Content-Type: application/json" \
   -d '{
@@ -34,9 +41,7 @@ curl -s -X POST http://localhost:3002/v1/scrape \
   }'
 ```
 
-### 方式二：Playwright（交互式页面）
-
-适合需要点击按钮、触发弹窗等交互操作的场景。
+### 步骤二：Playwright 处理交互
 
 ```python
 from playwright.sync_api import sync_playwright
@@ -73,7 +78,7 @@ with sync_playwright() as p:
 1. 登录 HIS 系统
 2. 打开浏览器开发者工具 (F12)
 3. Application → Cookies → 点击域名
-4. 复制 SESSION 和 JSESSIONID 值
+4. 复制 SESSION 值
 
 **注意**：Cookie 有效期较短，每次会话需要重新获取。
 
@@ -83,64 +88,26 @@ with sync_playwright() as p:
 |----------|-----|------|
 | 班次维护 | /his/kyee/outp/shiftInfoManager/home.json | ✅ 已测试 |
 | 分时时段维护 | /his/kyee/outp/clcTimeInfoManager/home.json | ✅ 已测试 |
-| 诊室信息维护 | /his/kyee/outp/roomInfo/home.json | ⏳ 待测试 |
+| 诊室信息维护 | /his/kyee/outp/clcRoomInfoManager/home.json | ✅ 已测试 |
+| 排班模板维护 | /his/schedule_mode_gt.htm | ✅ 已测试 |
 | 排班管理 | /his/schedule_gt.htm | ⏳ 待测试 |
 | 门诊收费日报 | /his/kyee/gt/report/clc/mzInvoiceShow.htm | ⏳ 待测试 |
 
-## 爬取方法论
-
-### 1. 静态内容抓取 (Firecrawl)
-
-适用于：
-- 列表页面（表格数据）
-- 搜索结果
-- 页面基本结构
-
-**优点**：快速、无需维护浏览器
-**缺点**：无法处理登录验证和复杂交互
-
-### 2. 交互式抓取 (Playwright)
-
-适用于：
-- 按钮点击
-- 弹窗内容
-- 表格行选中
-- 表单提交
-
-**优点**：可模拟真实用户操作
-**缺点**：需要处理弹窗覆盖问题
-
-### 3. 混合模式
-
-推荐工作流：
-1. 用 Firecrawl 快速获取页面基本结构
-2. 用 Playwright 处理交互操作（点击、弹窗）
-3. 截图保存关键页面状态
-
-### 4. 常见问题
+## 常见问题
 
 **Q: Cookie 过期了？**
 A: 每次会话需要重新获取新的 Cookie
 
 **Q: 点击按钮超时？**
-A: 检查是否有弹窗覆盖 (`.dhxwins_mcover`)，先按 Escape 关闭弹窗再操作
+A: 先按 Escape 关闭弹窗再操作
 
 **Q: 找不到元素？**
-A: 使用 `page.locator("selector").first.click()` 或 JavaScript: `page.evaluate("document.querySelector('selector').click()")`
-
-**Q: 部分模块没有清空按钮？**
-A: 分时时段维护模块没有清空按钮，这是正常的，直接清空搜索框即可
+A: 使用 `page.locator("selector").first.click()` 或 JavaScript 点击
 
 ## 保存位置
 
 - **笔记目录**: `~/myWork/Notes/his/`
 - **命名规范**: `his_{模块名}_{类型}.md/html/png`
-
-## 测试报告
-
-详见 `~/myWork/Notes/his/` 目录下的测试报告：
-- `班次维护_测试报告.md`
-- `分时时段维护_测试报告.md`
 
 ---
 更新于: 2026-03-24
