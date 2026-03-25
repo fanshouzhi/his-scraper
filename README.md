@@ -1,122 +1,103 @@
-# 云HIS内网系统爬取工具
+# HIS Scraper - 云HIS内网系统爬取工具
 
 自动化爬取云HIS（医院信息系统）内网管理页面。
 
-## 爬取规则（重要）
-
-**每次爬取必须使用混合模式：**
-
-1. **第一步：Firecrawl** - 获取页面基本结构
-   - 快速获取列表数据、表格内容
-   - 保存 Markdown/HTML 格式
-2. **第二步：Playwright** - 处理交互操作
-   - 按钮点击、弹窗内容
-   - 截图保存关键页面状态
-
-**禁止直接使用 Playwright 获取静态内容！**
-
 ## 功能特点
 
-- 支持需要登录认证的内网页面抓取
-- 支持按钮点击、弹窗交互等操作
-- 支持页面截图保存
-- 支持 Markdown/HTML 格式输出
-
-## 前置要求
-
-1. **Firecrawl 服务**：
-   ```bash
-   cd ~/firecrawl && docker compose up -d
-   ```
-
-2. **Playwright**：
-   ```bash
-   pip3 install playwright
-   python3 -m playwright install chromium
-   ```
-
-3. **Cookie**：用户登录后从浏览器获取
+- 🔐 **自动登录** - 无需手动获取 Cookie，支持自动登录
+- 🌐 **混合模式** - Firecrawl + Playwright 组合，兼顾速度与功能
+- 📸 **截图保存** - 关键页面截图保存
+- 📊 **数据导出** - Markdown + HTML 双格式输出
+- 🛠️ **脚本工具** - 一键爬取指定模块
 
 ## 快速开始
 
-### 步骤一：Firecrawl 获取静态内容
+### 安装依赖
 
 ```bash
-curl -s -X POST http://localhost:3002/v1/scrape \
-  -H "Content-Type: application/json" \
-  -d '{
-    "url": "http://172.16.8.20:8080/his/模块URL",
-    "formats": ["markdown", "html"],
-    "waitFor": 5000,
-    "headers": {"Cookie": "SESSION=xxx; job_no=zsgly; JSESSIONID=xxx"}
-  }'
+# 安装 Playwright
+pip3 install playwright
+python3 -m playwright install chromium
+
+# 启动 Firecrawl 服务
+cd ~/firecrawl && docker compose up -d
 ```
 
-### 步骤二：Playwright 处理交互
+### 使用方法
 
-```python
-from playwright.sync_api import sync_playwright
+```bash
+# 进入脚本目录
+cd ~/github/his-scraper/scripts
 
-cookie = {"name": "SESSION", "value": "xxx", "domain": "172.16.8.20", "path": "/his/"}
-job_no = {"name": "job_no", "value": "zsgly", "domain": "172.16.8.20", "path": "/his/"}
+# 列出所有可用模块
+python3 scrape_his.py --list
 
-with sync_playwright() as p:
-    browser = p.chromium.launch(headless=True)
-    context = browser.new_context()
-    page = context.new_page()
-    
-    context.add_cookies([cookie, job_no])
-    
-    page.goto("http://172.16.8.20:8080/his/模块URL")
-    page.wait_for_load_state("networkidle")
-    
-    # 截图
-    page.screenshot(path="screenshot.png", full_page=True)
-    
-    # 点击按钮
-    page.click("button:has-text('新增')")
-    page.wait_for_timeout(3000)
-    page.screenshot(path="modal.png", full_page=True)
-    
-    # 关闭弹窗
-    page.keyboard.press("Escape")
-    
-    browser.close()
+# 爬取单个模块
+python3 scrape_his.py bcwh        # 班次维护
+python3 scrape_his.py fssd        # 分时时段维护
+python3 scrape_his.py zsxx        # 诊室信息维护
+python3 scrape_his.py pbmb        # 排班模板维护
+
+# 自定义 URL
+python3 scrape_his.py --url '/his/kyee/outp/shiftInfoManager/home.json'
+
+# 爬取所有模块
+python3 scrape_his.py --all
 ```
 
-## Cookie 获取方式
+## 已支持模块
 
-1. 登录 HIS 系统
-2. 打开浏览器开发者工具 (F12)
-3. Application → Cookies → 点击域名
-4. 复制 SESSION 值
+| 模块 | 路径 | 说明 |
+|------|------|------|
+| 班次维护 | `/his/kyee/outp/shiftInfoManager/home.json` | 医护人员排班 |
+| 分时时段维护 | `/his/kyee/outp/clcTimeInfoManager/home.json` | 时段配置 |
+| 诊室信息维护 | `/his/kyee/outp/clcRoomInfoManager/home.json` | 诊室管理 |
+| 排班模板维护 | `/his/schedule_mode_gt.htm` | 排班模板 |
+| 排班管理 | `/his/schedule_gt.htm` | 排班管理 |
+| 预约挂号主页 | `/his/kyee/outp/reg/appointmentreg/home.html` | 预约挂号 |
 
-**注意**：Cookie 有效期较短，每次会话需要重新获取。
+## 方法论
 
-## 已测试模块
+### 混合爬取模式
 
-| 模块名称 | URL |
-|----------|-----|
-| 班次维护 | /his/kyee/outp/shiftInfoManager/home.json |
-| 分时时段维护 | /his/kyee/outp/clcTimeInfoManager/home.json |
-| 诊室信息维护 | /his/kyee/outp/clcRoomInfoManager/home.json |
-| 排班模板维护 | /his/schedule_mode_gt.htm |
+```
+┌─────────────────────────────────────────────────────────┐
+│  1. Firecrawl - 获取静态数据                            │
+│     - 表格内容、列表数据                                 │
+│     - 速度快、节省资源                                   │
+│                                                         │
+│  2. Playwright - 处理交互                               │
+│     - 按钮点击、弹窗内容                                 │
+│     - 截图保存、SPA 应用                                │
+└─────────────────────────────────────────────────────────┘
+```
 
-## 常见问题
+### 问题排查
 
-**Q: Cookie 过期了？**
-A: 每次会话需要重新获取新的 Cookie
+| 问题 | 解决方案 |
+|------|----------|
+| Cookie 失效 | 运行自动登录脚本获取新 Cookie |
+| Firecrawl 404 | 尝试将 `.html` 改为 `.json` |
+| Playwright 超时 | 增加 `wait_for_timeout` 时间 |
+| SPA 内容为空 | 使用 Playwright 截图替代 |
 
-**Q: 点击按钮超时？**
-A: 先按 Escape 关闭弹窗再操作
+## 目录结构
 
-**Q: 找不到元素？**
-A: 使用 `page.locator("selector").first.click()` 或 JavaScript 点击
+```
+hisV3/
+├── cookie.json           # 当前 Cookie
+├── platform.png         # 主页截图
+├── md_bcwh.md/html      # 班次维护数据
+├── png_bcwh.png         # 班次维护截图
+└── ...
+```
 
-## 保存位置
+## 技术栈
 
-- **笔记目录**: `~/myWork/Notes/his/`
-- **命名规范**: `his_{模块名}_{类型}.md/html/png`
+- **Firecrawl** - 网页爬取服务
+- **Playwright** - 浏览器自动化
+- **Python 3** - 脚本语言
 
----
-更新于: 2026-03-24
+## License
+
+MIT

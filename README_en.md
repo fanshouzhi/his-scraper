@@ -1,122 +1,79 @@
-# HIS Scraper
+# HIS Scraper - Cloud HIS Intranet Scraping Tool
 
 Automated scraping tool for Cloud HIS (Hospital Information System) intranet pages.
 
-## Scraping Rules (Important)
-
-**Every scraping must use hybrid mode:**
-
-1. **Step 1: Firecrawl** - Get page basic structure
-   - Quick fetch of list data, table content
-   - Save as Markdown/HTML format
-2. **Step 2: Playwright** - Handle interactive operations
-   - Button clicks, modal content
-   - Screenshot key page states
-
-**DO NOT use Playwright directly for static content!**
-
 ## Features
 
-- Supports authenticated intranet page scraping
-- Supports button clicks, modal interactions
-- Supports page screenshot capture
-- Supports Markdown/HTML output
-
-## Prerequisites
-
-1. **Firecrawl Service**:
-   ```bash
-   cd ~/firecrawl && docker compose up -d
-   ```
-
-2. **Playwright**:
-   ```bash
-   pip3 install playwright
-   python3 -m playwright install chromium
-   ```
-
-3. **Cookie**: Get from browser after login
+- 🔐 **Auto Login** - No manual Cookie needed, supports automatic login
+- 🌐 **Hybrid Mode** - Firecrawl + Playwright combination for speed and functionality
+- 📸 **Screenshot** - Save key page screenshots
+- 📊 **Data Export** - Markdown + HTML dual format output
+- 🛠️ **Script Tools** - One-click scraping for specified modules
 
 ## Quick Start
 
-### Step 1: Firecrawl for Static Content
+### Install Dependencies
 
 ```bash
-curl -s -X POST http://localhost:3002/v1/scrape \
-  -H "Content-Type: application/json" \
-  -d '{
-    "url": "http://172.16.8.20:8080/his/moduleURL",
-    "formats": ["markdown", "html"],
-    "waitFor": 5000,
-    "headers": {"Cookie": "SESSION=xxx; job_no=zsgly; JSESSIONID=xxx"}
-  }'
+# Install Playwright
+pip3 install playwright
+python3 -m playwright install chromium
+
+# Start Firecrawl service
+cd ~/firecrawl && docker compose up -d
 ```
 
-### Step 2: Playwright for Interaction
+### Usage
 
-```python
-from playwright.sync_api import sync_playwright
+```bash
+# List available modules
+python3 scrape_his.py --list
 
-cookie = {"name": "SESSION", "value": "xxx", "domain": "172.16.8.20", "path": "/his/"}
-job_no = {"name": "job_no", "value": "zsgly", "domain": "172.16.8.20", "path": "/his/"}
+# Scrape single module
+python3 scrape_his.py bcwh        # Shift Info Manager
+python3 scrape_his.py fssd        # Time Slot Config
+python3 scrape_his.py zsxx        # Room Info Manager
 
-with sync_playwright() as p:
-    browser = p.chromium.launch(headless=True)
-    context = browser.new_context()
-    page = context.new_page()
-    
-    context.add_cookies([cookie, job_no])
-    
-    page.goto("http://172.16.8.20:8080/his/moduleURL")
-    page.wait_for_load_state("networkidle")
-    
-    # Screenshot
-    page.screenshot(path="screenshot.png", full_page=True)
-    
-    # Click button
-    page.click("button:has-text('Add')")
-    page.wait_for_timeout(3000)
-    page.screenshot(path="modal.png", full_page=True)
-    
-    # Close modal
-    page.keyboard.press("Escape")
-    
-    browser.close()
+# Custom URL
+python3 scrape_his.py --url '/his/kyee/outp/shiftInfoManager/home.json'
+
+# Scrape all modules
+python3 scrape_his.py --all
 ```
 
-## How to Get Cookie
+## Supported Modules
 
-1. Login to HIS system
-2. Open browser DevTools (F12)
-3. Application → Cookies → click domain
-4. Copy SESSION value
+| Module | Path | Description |
+|--------|------|-------------|
+| Shift Info Manager | `/his/kyee/outp/shiftInfoManager/home.json` | Medical staff scheduling |
+| Time Slot Config | `/his/kyee/outp/clcTimeInfoManager/home.json` | Time slot configuration |
+| Room Info Manager | `/his/kyee/outp/clcRoomInfoManager/home.json` | Room management |
+| Schedule Template | `/his/schedule_mode_gt.htm` | Schedule templates |
+| Schedule Manager | `/his/schedule_gt.htm` | Schedule management |
+| Appointment Main | `/his/kyee/outp/reg/appointmentreg/home.html` | Appointment registration |
 
-**Note**: Cookie expires frequently, need to get new one each session.
+## Methodology
 
-## Tested Modules
+### Hybrid Scraping Mode
 
-| Module Name | URL |
-|-------------|-----|
-| 班次维护 (Shift Info) | /his/kyee/outp/shiftInfoManager/home.json |
-| 分时时段维护 (Time Slots) | /his/kyee/outp/clcTimeInfoManager/home.json |
-| 诊室信息维护 (Room Info) | /his/kyee/outp/clcRoomInfoManager/home.json |
-| 排班模板维护 (Schedule Template) | /his/schedule_mode_gt.htm |
+```
+┌─────────────────────────────────────────────────────────┐
+│  1. Firecrawl - Get static data                       │
+│     - Table content, list data                         │
+│     - Fast speed, low resource usage                   │
+│                                                         │
+│  2. Playwright - Handle interactions                  │
+│     - Button clicks, modal content                     │
+│     - Screenshots, SPA applications                   │
+└─────────────────────────────────────────────────────────┘
+```
 
-## Common Issues
+## Tech Stack
 
-**Q: Cookie expired?**
-A: Get new Cookie for each session
+- **Firecrawl** - Web scraping service
+- **Playwright** - Browser automation
+- **Python 3** - Scripting language
 
-**Q: Click timeout?**
-A: Press Escape to close modal first
+## License
 
-**Q: Element not found?**
-A: Use `page.locator("selector").first.click()` or JavaScript click
-
-## Save Location
-
-- **Notes**: `~/myWork/Notes/his/`
-- **Naming**: `his_{module}_{type}.md/html/png`
-
----
-Updated: 2026-03-24
+MIT
